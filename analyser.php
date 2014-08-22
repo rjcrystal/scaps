@@ -47,7 +47,6 @@ $ign = array
 	'T_BAD_CHARACTER',
 	'T_DOC_COMMENT',
 	'T_COMMENT',
-	'T_INLINE_HTML',
 	'T_WHITESPACE',
 	'T_OPEN_TAG',
 	'T_CLOSE_TAG'
@@ -59,15 +58,35 @@ $incl= array(
 'T_REQUIRE',
 'T_REQUIRE_ONCE' 
 );
+$exptbl= array (
+'mysql_query',
+'mysqli_query',
+'echo',
+'print',
+'eval',
+'popen',
+'assert',
+'include',
+'include_once',
+'require',
+'require_once'
+);
 $list = array ();
-$udff = array();
-$warnfunc= array();
+$warnfunc = array();
 filterunwanted($some,$ign);
 echo count($some);
 //analyse($some,$list);
 print("<pre>".print_r($some,true)."</pre>");
-//$list=array_values(multi_unique($list));
 //print("<pre>".print_r($list,true)."</pre>");
+//array_walk($list,'tna',$some);
+function tna(&$list,$key,$main)
+{
+	for ($ctrl=true;$ctrl;)
+	{
+		
+	}
+
+}
 function analyse(&$some,&$list)
 {
 $taintable=array 
@@ -88,7 +107,8 @@ $taintable=array
 					if ($boo ==='T_FUNCTION')
 					{
 					$supkey=$some[$skey+1][1];
-					$udf=array ($supkey,'udf');
+					$lno=$some[$skey+1][2];
+					$udf=array ($supkey,'udf',$lno);
 					array_push($list,$udf);
 					}
 					continue;
@@ -141,7 +161,6 @@ function listvar($type,$skey,$main,&$list)
 				if ($main[$i][0]=='T_CONSTANT_ENCAPSED_STRING')
 				{
 					$varname=$main[$i][1];
-					$ln=$main[$i][2];
 					$filtered=strunquote($varname);
 					if ($filtered==NULL) // remove any empty constant encapsed strings 
 					{
@@ -149,7 +168,8 @@ function listvar($type,$skey,$main,&$list)
 					}
 					else 
 					{
-						$tmparr=array ($filtered,'post');
+						
+						$tmparr=array ($filtered,'post',$i);
 						array_push($list,$tmparr);
 						$ctrl=false;
 						continue;
@@ -174,7 +194,6 @@ function listvar($type,$skey,$main,&$list)
 				if ($main[$i][0]=='T_CONSTANT_ENCAPSED_STRING')
 				{
 					$varname=$main[$i][1];
-					$ln=$main[$i][2];
 					$filtered=strunquote($varname);
 					if ($filtered ==NULL) // remove any empty constant encapsed strings 
 					{
@@ -182,7 +201,7 @@ function listvar($type,$skey,$main,&$list)
 					}
 					else 
 					{
-						$tmparr=array ($filtered,'get');
+						$tmparr=array ($filtered,'get',$i);
 						array_push($list,$tmparr);
 						$ctrl=false;
 						continue;
@@ -208,7 +227,6 @@ function listvar($type,$skey,$main,&$list)
 				if ($main[$i][0]=='T_CONSTANT_ENCAPSED_STRING')
 				{
 					$varname=$main[$i][1];
-					$ln=$main[$i][2];
 					$filtered=strunquote($varname);
 					if ($filtered == null) // remove any empty constant encapsed strings 
 					{
@@ -216,7 +234,7 @@ function listvar($type,$skey,$main,&$list)
 					}
 					else 
 					{
-					$tmparr=array ($filtered,'session');
+					$tmparr=array ($filtered,'session',$i);
 					array_push($list,$tmparr);
 					$ctrl=false;
 					continue;
@@ -286,13 +304,18 @@ function filterunwanted (&$some,$ign)
 	$some=array_values($some);
 }
  function multi_unique($array) 
- {
+{
         foreach ($array as $k=>$na)
             $new[$k] = serialize($na);
         $uniq = array_unique($new);
         foreach($uniq as $k=>$ser)
             $new1[$k] = unserialize($ser);
         return ($new1);
+}
+function jasu ($input)
+{
+	$input = array_map("unserialize", array_unique(array_map("serialize", $input)));
+	return $input;
 }
 $end_time = microtime(true);
 echo 'time :  '.($end_time - $start_time)." sec\n <br>";

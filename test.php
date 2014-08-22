@@ -200,7 +200,7 @@ function stats($stat)
 			mysql_data_seek($guid,$g);
 			$gnu=mysql_fetch_assoc($uque);
 			$gnu2=mysql_fetch_assoc($guid);
-			echo "<option value=\"$gnu2[user_id]\">$gnu[name]</option>";	
+			echo "<option value=\"$gnu2[user_id]\">$gnu[name]</option>";
 		}
 		echo "</select>";
 		echo "<select name=\"js\">";
