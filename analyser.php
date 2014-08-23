@@ -41,7 +41,7 @@
 </nav>
 <?php
 $start_time = microtime(true);
-$some=token_get_all(file_get_contents('wp-login.php'));
+$some=token_get_all(file_get_contents('test.php'));
 $ign = array
 (
 	'T_BAD_CHARACTER',
@@ -76,9 +76,9 @@ $warnfunc = array();
 filterunwanted($some,$ign);
 echo count($some);
 analyse($some,$list);
-//print("<pre>".print_r($some,true)."</pre>");
-print("<pre>".print_r($list,true)."</pre>");
-//array_walk($list,'tna',$some);
+print("<pre>".print_r($some,true)."</pre>"); // prints all tokens 
+print("<pre>".print_r($list,true)."</pre>");// prints user defined functions ,and Superglobals used for form handling with array key no
+array_walk($list,'tna',$some);
 function tna(&$list,$key,$main)
 {
 	echo "<br>";
