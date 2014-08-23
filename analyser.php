@@ -41,7 +41,7 @@
 </nav>
 <?php
 $start_time = microtime(true);
-$some=token_get_all(file_get_contents('wp-login.php'));
+$some=token_get_all(file_get_contents('test.php'));
 $ign = array
 (
 	'T_BAD_CHARACTER',
@@ -75,14 +75,17 @@ $list = array ();
 $warnfunc = array();
 filterunwanted($some,$ign);
 echo count($some);
-analyse($some,$list);
-//print("<pre>".print_r($some,true)."</pre>");
-print("<pre>".print_r($list,true)."</pre>");
+//analyse($some,$list);
+print("<pre>".print_r($some,true)."</pre>");
+//print("<pre>".print_r($list,true)."</pre>");
 //array_walk($list,'tna',$some);
 function tna(&$list,$key,$main)
 {
-	echo "<br>";
-	print_r($list);
+	for ($ctrl=true;$ctrl;)
+	{
+		
+	}
+
 }
 function analyse(&$some,&$list)
 {
