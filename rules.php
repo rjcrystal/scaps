@@ -28,6 +28,13 @@ $exptbl= array (
 'require',
 'require_once'
 );
+$taintable=array 
+(
+	'$_POST',
+	'$_GET',
+	'$_SESSION',
+	'T_FUNCTION'
+);
 $list = array ();
 $warnfunc = array();
 ?>

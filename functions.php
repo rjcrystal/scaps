@@ -1,17 +1,37 @@
 <?php
-function tna(&$list,$key,$main) //track where the data from user taintable variable goes 
+function tna(&$list,$main) //track where the data from user taintable variable goes 
 {
-
+	foreach($list as $key=>$ar2)
+	{
+		$lno=$ar2[3];
+		$ctrl=true;
+		for($i=$ar2[2];$ctrl;$i--)
+		{
+			if ($main[$i]==='=')
+			{
+				$eqvarloc=$i-3;
+				if ($main[$eqvarloc]==='T_VARIABLE')
+				{
+					array_push($list[$key],$main[$quvarloc]);
+				}
+			}
+			else if ($main[$i]===';')
+			{
+				break;
+			}
+			else 
+			{
+				continue;
+			}
+			
+			
+		}
+	}
 }
-function analyse(&$some,&$list) //filter out superglobals and user defined functions form code
+
+
+function analyse(&$some,&$list,$taintable) //filter out super globals and user defined functions form code
 {
-$taintable=array 
-(
-	'$_POST',
-	'$_GET',
-	'$_SESSION',
-	'T_FUNCTION'
-);
 
 	foreach($some as $skey =>&$val)
 	{
