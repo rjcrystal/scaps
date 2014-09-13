@@ -9,16 +9,18 @@ function tna(&$list,$main) //track where the data from user taintable variable g
 		{
 			if ($main[$i]==='=')
 			{
+				echo 'equal found';
 				$eqvarloc=$i-3;
-				if ($main[$eqvarloc]==='T_VARIABLE')
+				if ($main[$eqvarloc]=='T_VARIABLE')
 				{
-					array_push($list[$key],$main[$quvarloc]);
+					array_push($list[$i],$main[$quvarloc][1]);
 				}
 			}
 			else if ($main[$i]===';')
 			{
 				break;
 			}
+			else if ($main[$i][0]==)
 			else 
 			{
 				continue;
@@ -28,8 +30,6 @@ function tna(&$list,$main) //track where the data from user taintable variable g
 		}
 	}
 }
-
-
 function analyse(&$some,&$list,$taintable) //filter out super globals and user defined functions form code
 {
 
