@@ -9,18 +9,24 @@ function tna(&$list,$main) //track where the data from user taintable variable g
 		{
 			if ($main[$i]==='=')
 			{
-				echo 'equal found';
-				$eqvarloc=$i-3;
-				if ($main[$eqvarloc]=='T_VARIABLE')
+				$eqvarloc=$i-1;
+				if ($main[$eqvarloc][0]=='T_VARIABLE')//checks to which variable the value from superglobal is given
 				{
-					array_push($list[$i],$main[$quvarloc][1]);
+					/*echo "var found";
+					print_r($main[$eqvarloc]);
+					echo "<br>";
+					*/
+					array_push($list[$key],$main[$eqvarloc][1]);
+				}
+				else if ($main[$eqvarloc][0]=='')
+				{
+					
 				}
 			}
 			else if ($main[$i]===';')
 			{
 				break;
 			}
-			else if ($main[$i][0]==)
 			else 
 			{
 				continue;
