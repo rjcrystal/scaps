@@ -1,44 +1,92 @@
 <?php
-function tna(&$list,$main) //track where the data from user taintable variable goes 
+function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user taintable variable goes 
 {
 	foreach($list as $key=>$ar2)
-	{
-		$lno=$ar2[3];
-		$ctrl=true;
-		for($i=$ar2[2];$ctrl;$i--)
+	{	
+		if($ar2[1]==='udf') // understanding what current function will do
 		{
-			if ($main[$i]==='=')
+			echo "$ar2[0]";
+			$ctrl2=true;
+			for ($i=$ar2[2];$ctrl2;$i++)
 			{
-				$eqvarloc=$i-1;
-				if ($main[$eqvarloc][0]=='T_VARIABLE')//checks to which variable the value from superglobal is given
+				if ($main[$i]==='(')// finds all function arguments
 				{
-					/*echo "var found";
-					print_r($main[$eqvarloc]);
-					echo "<br>";
-					*/
-					array_push($list[$key],$main[$eqvarloc][1]);
+					$udfvarlist=array ();
+					$buf=findvarsudf($main,$i);
+					array_push($udfvarlist,$buf);
+					print("<pre>".print_r($buf,true)."</pre>");
 				}
-				else if ($main[$eqvarloc][0]=='')
+				if (is_array($main[$i]))
 				{
-					
+					$where=$main[$i];
+					//print("<pre>".print_r($where,true)."</pre>");
 				}
-			}
-			else if ($main[$i]===';')
-			{
-				break;
-			}
-			else 
-			{
-				continue;
+				else if ($main[$i]==='}')
+				{
+					break;
+				}
 			}
 			
-			
+		}
+		else
+		{
+			$ctrl=true;
+			for($i=$ar2[2];$ctrl;$i--)
+			{
+				$where=$main[$i];
+			//	print("<pre>".print_r($where,true)."</pre>");
+				if ($where==='=')
+				{
+					$eqvarloc=$i-1;
+					if ($main[$eqvarloc][0]=='T_VARIABLE')//checks to which variable the value from superglobal is given
+					{
+						/*echo "var found";
+						print_r($main[$eqvarloc]);
+						echo "<br>";
+						*/
+						array_push($list[$key],$main[$eqvarloc][1]);
+					}
+				}
+				else if ($main[$i]===';')
+				{
+					break;
+				}
+				else 
+				{
+					continue;
+				}
+			}
 		}
 	}
 }
+function findvarsudf($main,$i)
+{
+$ar= array();
+	for($j=$i;;$j++)
+	{	
+		if($main[$j]===')')//detect end of a function argument list
+		{
+			if ($j===$i+1)
+			{
+				return null;
+			}
+			else
+			{
+				break;
+			}
+		}
+		if (is_array($main[$j]))
+		{
+			if($main[$j][0]==='T_VARIABLE')
+			{
+				array_push($ar,$main[$j][1]);	
+			}
+		}
+	}
+	return $ar;
+}
 function analyse(&$some,&$list,$taintable) //filter out super globals and user defined functions form code
 {
-
 	foreach($some as $skey =>&$val)
 	{
 		if (is_array($val))

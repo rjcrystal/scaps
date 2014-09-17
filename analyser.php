@@ -17,8 +17,8 @@ Array
         )
 
 </pre>';
-//print("<pre>".print_r($main,true)."</pre>");
-tna($list,$main);
+print("<pre>".print_r($main,true)."</pre>");
+tna($list,$main,$ctrlr,$funcstats);
 //print("<pre>".print_r($list,true)."</pre>");
 $end_time = microtime(true);
 echo 'time :  '.($end_time - $start_time)." sec\n <br>";

@@ -29,7 +29,6 @@ $taintable=array
 	'T_FUNCTION'
 );//defines which elements to look for in a code
 $ctrlr= array (
-
 	'T_IF', 
 	'T_SWITCH',
 	'T_ELSEIF',
@@ -40,6 +39,10 @@ $fcon= array (
 		'T_REQUIRE',
 		'T_REQUIRE_ONCE'
 );// used to detect if files are connected /included
+$funcstats= array (
+
+);
+// stats about functions that are analysed by the tna function 
 $list = array ();
 $warnfunc = array();
 ?>
