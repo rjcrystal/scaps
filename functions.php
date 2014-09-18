@@ -5,18 +5,20 @@ function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user ta
 	{	
 		if($ar2[1]==='udf') // understanding what current function will do
 		{
-			echo "$ar2[0]";
+			//echo "$ar2[0]";
 			$ctrl2=true;
+			$flag=true;
 			for ($i=$ar2[2];$ctrl2;$i++)
 			{
-				if ($main[$i]==='(')// finds all function arguments
+				if ($main[$i]==='(' and $flag)// finds all function arguments
 				{
-					$udfvarlist=array ();
-					$buf=findvarsudf($main,$i);
+					$udfvarlist=array ();// will contain list of all the argument variables 
+					$buf= array ($ar2[0]=> findvarsudf($main,$i));
 					array_push($udfvarlist,$buf);
 					print("<pre>".print_r($buf,true)."</pre>");
+					$flag=false;
 				}
-				if (is_array($main[$i]))
+				if (is_array($main[$i]))// finds all the stuff used in function defination
 				{
 					$where=$main[$i];
 					//print("<pre>".print_r($where,true)."</pre>");
@@ -68,7 +70,7 @@ $ar= array();
 		{
 			if ($j===$i+1)
 			{
-				return null;
+				return 'no variable';
 			}
 			else
 			{

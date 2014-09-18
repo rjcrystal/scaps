@@ -5,19 +5,20 @@ require 'rules.php';
 require 'functions.php';
 filterunwanted($main,$ign);
 analyse($main,$list,$taintable);
-echo '<pre>
+/*<pre>
+$main array legend
 Array
 (
     [0] => Array
         (
             [0] => variable or function name
             [1] => type of variable or function
-	    [2] => key in main array
+			[2] => key in main array
             [3] => line number
         )
 
-</pre>';
-print("<pre>".print_r($main,true)."</pre>");
+</pre>*/
+//print("<pre>".print_r($main,true)."</pre>");
 tna($list,$main,$ctrlr,$funcstats);
 //print("<pre>".print_r($list,true)."</pre>");
 $end_time = microtime(true);
