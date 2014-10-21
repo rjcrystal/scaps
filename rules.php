@@ -16,10 +16,6 @@ $exptbl= array (
 'eval',
 'popen',
 'assert',
-'include',
-'include_once',
-'require',
-'require_once'
 );// exploitable functions which can be
 $taintable=array 
 (
