@@ -19,7 +19,7 @@ function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user ta
 					}
 					if ($main[$i]==='{')
 					{
-						$funcstats=funcxplr($main,$i);
+						$funcstats=explorer($main,$i);
 						break;
 					}
 			}
@@ -51,18 +51,40 @@ function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user ta
 		}
 	}
 }
-function funcxplr($main,$i)// explore function and its operations  
+function explorer($main,$i,$mode="udf")// explore function and its operations  
 {
-	for($j=$i;;$j++)
-	{	
-		//print("<pre>".print_r($main[$j],true)."</pre>");
-		if($main[$j]==='T_STRING')
-		{
-			
+	if($mode="udf")
+	{
+		for($j=$i;;$j++)
+		{	
+			//print("<pre>".print_r($main[$j],true)."</pre>");
+			if($main[$j]==='T_STRING')
+			{
+				array_search();
+			}
+			else if ($main[$j]==='}')
+			{
+				break;
+			}
+			else 
+			{
+				continue;
+			}
 		}
-		if ($main[$j]==='}')
-		{
-			break;
+	}
+	else
+	{
+		for($j=$i;;$j++)
+		{	
+			//print("<pre>".print_r($main[$j],true)."</pre>");
+			if($main[$j]==='T_STRING')
+			{
+				
+			}
+			if ($main[$j]==='}')
+			{
+				break;
+			}
 		}
 	}
 }
@@ -114,7 +136,7 @@ function filterunwanted(&$some,$ign) //removes unwanted stuff from token array a
 				{
 					$str=token_name((int)$boo);
 					$search=array_search($str,$ign,true);
-						if ($search)
+						if ($search)//remove elements defined in $ign array
 						{
 							unset ($some[$supkey]);
 							break;
