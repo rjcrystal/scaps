@@ -1,8 +1,10 @@
 <?php
+
 function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user taintable variable goes 
 {
 	foreach($list as $key=>$ar2)
-	{	
+	{
+		/*
 		if($ar2['type']==='udf') // understanding what current function will do
 		{
 			echo "$ar2[name]";
@@ -27,6 +29,7 @@ function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user ta
 		}
 		else
 		{
+			*/
 			$ctrl=true;
 			for($i=$ar2['key'];$ctrl;$i--)
 			{
@@ -48,21 +51,49 @@ function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user ta
 					continue;
 				}
 			}
-		}
+		
 	}
 }
-function explorer($main,$i,$mode="udf")// explore function and its operations  
+function explorer($main,$i,$temp,$mode="udf")// explore function and its operations  
 {
-	if($mode="udf")
+	include 'rules.php';
+	if($mode==="udf")
 	{
 		for($j=$i;;$j++)
 		{	
+			//echo "in for loop";
+			//echo "$j";
 			//print("<pre>".print_r($main[$j],true)."</pre>");
-			if($main[$j]==='T_STRING')
+			if($main[$j][0]==='T_STRING')
 			{
-				array_search();
+				$fname=$main[$j][1];
+				if(in_array($fname,$sqli))
+				{
+					echo "sqli functions found";
+				}
+				else if (in_array($fname,$xss))
+				{
+					echo "xss functions found";
+				}
+				else if (in_array($fname,$cmdexec))
+				{
+					echo "command execution functions found";
+				}
+				else if (in_array($fname,$clbkfunc))
+				{
+					echo "callback functions found";
+				}
+				else 
+				{
+					
+				}
+				
 			}
-			else if ($main[$j]==='}')
+			else if(in_array($main[$j][0],$lrfi))
+			{
+				echo "lfi rfi function found";
+			}
+			else if ($main[$j][1]==='}')
 			{
 				break;
 			}
@@ -74,16 +105,71 @@ function explorer($main,$i,$mode="udf")// explore function and its operations
 	}
 	else
 	{
-		for($j=$i;;$j++)
-		{	
+		
+		$end=count($main);
+		for($j=0;$j<$end;$j++)
+		{
+			//print_r($main[$j]);
 			//print("<pre>".print_r($main[$j],true)."</pre>");
-			if($main[$j]==='T_STRING')
+			if($main[$j][0]==='T_STRING')
 			{
-				
+				$fname=$main[$j][1];
+				if(in_array($fname,$sqli))
+				{
+					
+					if($main[$j+2][0]==='T_CONSTANT_ENCAPSED_STRING')
+					{
+						echo "query is".$main[$j+2][1]."<br>";
+					}
+					else if ($main[$j+2][0]==='T_VARIABLE')
+					{
+						echo "var is ".$main[$j+2][1]."<br>";
+					}
+					else if ($main[$j+3][0]==='T_ENCAPSED_AND_WHITESPACE') //for insert and delete queries
+					{
+						echo "dml query is ";
+						for ($i=$j+3;$main[$i]!=='"';$i++)
+						{
+							if(is_array($main[$i]))
+							{
+								if ($main[$i][0]==='T_VARIABLE')
+								{
+									
+								}
+								echo $main[$i][1];
+							}
+							else 
+							{
+								echo $main[$i];
+							}
+						}
+						echo "<br>";
+					}
+					else 
+					{
+						echo "$j <br>";
+					}
+				}
+				else if (in_array($fname,$xss))
+				{
+					echo "xss functions found <br>";
+				}
+				else if (in_array($fname,$cmdexec))
+				{
+					echo "command execution functions found <br>";
+				}
+				else if (in_array($fname,$clbkfunc))
+				{
+					echo "callback functions found <br>";
+				}
+				else 
+				{
+					
+				}
 			}
-			if ($main[$j]==='}')
+			else if(in_array($main[$j][0],$lrfi))
 			{
-				break;
+				echo "lfi rfi function found <br>";
 			}
 		}
 	}

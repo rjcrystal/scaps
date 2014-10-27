@@ -8,15 +8,19 @@ $ign = array
 	'T_OPEN_TAG',
 	'T_CLOSE_TAG'
 ); //which elements to ignore  
-$exptbl= array (
+$sqli= array (
 'mysql_query',
-'mysqli_query',
-'echo',
-'print',
-'eval',
-'popen',
-'assert',
+'mysqli_query'
 );// exploitable functions which can be
+$xss=array 
+(
+'echo',
+'print'
+);
+$temp =array 
+(
+	
+);
 $cmdexec= array  
 (
 	'exec',
