@@ -1,99 +1,22 @@
 <?php
 
-function tna(&$list,$main,$ctrlr,$funcstats) //track where the data from user taintable variable goes 
+function tna(&$list,$main,$ctrlr) //track where the data from user taintable variable goes 
 {
 	foreach($list as $key=>$ar2)
 	{
-		/*
-		if($ar2['type']==='udf') // understanding what current function will do
+		$ctrl=true;
+		for($i=$ar2['key'];$ctrl;$i--)
 		{
-			echo "$ar2[name]";
-			$ctrl2=true;
-			$flag=true;
-			for ($i=$ar2['key'];$ctrl2;$i++)
+			$where=$main[$i];
+			if ($where==='=')
 			{
-					if ($main[$i]==='(' and $flag)// finds all function arguments
-					{
-						$udfvarlist=array ();// will contain list of all the argument variables
-						$buf= array ($ar2['name']=> findvarsudf($main,$i));
-						array_push($udfvarlist,$buf);
-						$flag=false;
-					}
-					if ($main[$i]==='{')
-					{
-						$funcstats=explorer($main,$i);
-						break;
-					}
-			}
-			
-		}
-		else
-		{
-			*/
-			$ctrl=true;
-			for($i=$ar2['key'];$ctrl;$i--)
-			{
-				$where=$main[$i];
-				if ($where==='=')
+				$eqvarloc=$i-1;
+				if ($main[$eqvarloc][0]=='T_VARIABLE')//checks to which variable the value from superglobal is given
 				{
-					$eqvarloc=$i-1;
-					if ($main[$eqvarloc][0]=='T_VARIABLE')//checks to which variable the value from superglobal is given
-					{
-						array_push($list[$key],$main[$eqvarloc][1]);
-					}
-				}
-				else if ($main[$i]===';')
-				{
-					break;
-				}
-				else 
-				{
-					continue;
+					array_push($list[$key],$main[$eqvarloc][1]);
 				}
 			}
-		
-	}
-}
-function explorer($main,$i,$temp,$mode="udf")// explore function and its operations  
-{
-	include 'rules.php';
-	if($mode==="udf")
-	{
-		for($j=$i;;$j++)
-		{	
-			//echo "in for loop";
-			//echo "$j";
-			//print("<pre>".print_r($main[$j],true)."</pre>");
-			if($main[$j][0]==='T_STRING')
-			{
-				$fname=$main[$j][1];
-				if(in_array($fname,$sqli))
-				{
-					echo "sqli functions found";
-				}
-				else if (in_array($fname,$xss))
-				{
-					echo "xss functions found";
-				}
-				else if (in_array($fname,$cmdexec))
-				{
-					echo "command execution functions found";
-				}
-				else if (in_array($fname,$clbkfunc))
-				{
-					echo "callback functions found";
-				}
-				else 
-				{
-					
-				}
-				
-			}
-			else if(in_array($main[$j][0],$lrfi))
-			{
-				echo "lfi rfi function found";
-			}
-			else if ($main[$j][1]==='}')
+			else if ($main[$i]===';')
 			{
 				break;
 			}
@@ -103,56 +26,114 @@ function explorer($main,$i,$temp,$mode="udf")// explore function and its operati
 			}
 		}
 	}
-	else
+}
+
+function sechk($data,$list,$main,$type,$te="direct",$k="0@0")
+{
+	include 'rules.php';
+	if ($type=='var')//for variable used in a query
 	{
+		//print_r($list);
+		foreach($list as $key=>$val)
+		{
+			if(array_key_exists(0,$val))
+			{
+				if($data===$val[0])
+				{
+					//echo "$te injection found $data<br>";
+					highlight($k,$main);
+				}
+				else 
+				{
+					
+				}
+			}
+		}
+		if(in_array($data,$taintable))
+		{
+			//echo "SQL injection found direct superglobal use <br>";
+		}
 		
+	}
+	else if ($type==='string')//for queries stored as string in a variable
+	{
+		foreach($list as $chk)
+		{
+			if(array_key_exists('query',$chk))
+			{
+				if($chk['qvar']===$data)
+				{
+					sechk($data,$list,$main,'var');
+				}
+			}
+		}
+	}
+}
+function highlight()
+{
+	include_once 'geshi.php';
+	$data= func_get_args();
+	$str="";
+	
+	if(count($data)===2)
+	{
+		$key=func_get_arg(0);
+		
+		$main=func_get_arg(1);
+		$line=$main[$key][2];
+		//echo "key $key ";
+		for($i=$key;$main[$i]!==';';$i++)
+		{
+			if(is_array($main[$i]))
+			{
+				$str.=$main[$i][1];
+			}
+			else 
+			{
+				$str.=$main[$i];
+			}
+		}
+		//$str.="";
+		$lang='php';
+		$geshi= new Geshi($str,$lang);
+		echo $geshi->parse_code()."$line";
+		echo "<br>";
+	}
+	else 
+	{
+		highlight_string(func_get_arg(0));
+		echo "<br>";
+	}
+}
+function explorer($main,$i,&$temp,$list,$mode="udf")// explore function and its operations  
+{
+	include 'exploitconfig.php';
 		$end=count($main);
 		for($j=0;$j<$end;$j++)
 		{
-			//print_r($main[$j]);
-			//print("<pre>".print_r($main[$j],true)."</pre>");
 			if($main[$j][0]==='T_STRING')
 			{
 				$fname=$main[$j][1];
 				if(in_array($fname,$sqli))
 				{
-					
-					if($main[$j+2][0]==='T_CONSTANT_ENCAPSED_STRING')
+					if ($main[$j+2][0]==='T_VARIABLE')//if the query is stored in a variable
 					{
-						echo "query is".$main[$j+2][1]."<br>";
+						echo sechk($main[$j+2][1],$list,$main,'string');
 					}
-					else if ($main[$j+2][0]==='T_VARIABLE')
+					else if ($main[$j+3][0]==='T_ENCAPSED_AND_WHITESPACE') //for queries with variables 
 					{
-						echo "var is ".$main[$j+2][1]."<br>";
-					}
-					else if ($main[$j+3][0]==='T_ENCAPSED_AND_WHITESPACE') //for insert and delete queries
-					{
-						echo "dml query is ";
 						for ($i=$j+3;$main[$i]!=='"';$i++)
 						{
 							if(is_array($main[$i]))
 							{
 								if ($main[$i][0]==='T_VARIABLE')
 								{
-									
+									sechk($main[$i][1],$list,$main,'var','sql',$j);
 								}
-								echo $main[$i][1];
-							}
-							else 
-							{
-								echo $main[$i];
+								
 							}
 						}
-						echo "<br>";
 					}
-					else 
-					{
-						echo "$j <br>";
-					}
-				}
-				else if (in_array($fname,$xss))
-				{
-					echo "xss functions found <br>";
 				}
 				else if (in_array($fname,$cmdexec))
 				{
@@ -167,12 +148,25 @@ function explorer($main,$i,$temp,$mode="udf")// explore function and its operati
 					
 				}
 			}
+			else if (in_array($main[$j][0],$xss))
+			{
+				for($i=$j;$main[$i]!==';';$i++)
+				{
+					if(is_array($main[$i]))
+					{
+						if ($main[$i][0]==='T_VARIABLE')
+						{
+							sechk($main[$i][1],$list,'var','xss',$main[$i][2]."@".$i);
+						}
+					}
+				}
+			}
 			else if(in_array($main[$j][0],$lrfi))
 			{
 				echo "lfi rfi function found <br>";
 			}
 		}
-	}
+	
 }
 
 function findvarsudf($main,$i)
@@ -239,7 +233,6 @@ function filterunwanted(&$some,$ign) //removes unwanted stuff from token array a
 				}
 			}
 		}
-		
 	}
 	$some=array_values($some);
 }
@@ -253,7 +246,7 @@ function filtersuperglobals($some,&$list,$taintable) //filter out super globals 
 			{
 				if ($key===0)
 				{
-					if ($boo === $taintable[3])
+					if ($boo === $taintable[2])
 					{
 						$supkey=$some[$skey+1][1];
 						$lno=$some[$skey+1][2];
@@ -271,11 +264,26 @@ function filtersuperglobals($some,&$list,$taintable) //filter out super globals 
 						listvar($sw,$skey,$some,$list,$taintable);						
 						continue;
 					}
+					else if ($some[$skey][0]==='T_VARIABLE' and $some[$skey+1]==='=' and $some[$skey+3][0]==='T_ENCAPSED_AND_WHITESPACE')
+					{
+						if (startsWith($some[$skey+3][1]))
+						{
+							$querystr =array('key'=>$skey,'variable'=>$some[$skey][1],'query'=>$some[$skey+3][1],'qvar'=>$some[$skey+4][1]);
+							array_push($list,$querystr);
+						}
+					}
+					
 				}
 			}
 		
 		}
 	}	
+}
+function startsWith($needle)//checks if the string is a mysql query or not
+{
+	$haystack=array('select','create','insert','delete','update');
+	$ans=explode(" ",$needle);
+	return in_array($ans[0],$haystack);
 }
 function listvar($type,$skey,$main,&$list,$taintable)//finds the name of superglobals
 {
@@ -311,7 +319,7 @@ function listvar($type,$skey,$main,&$list,$taintable)//finds the name of supergl
 			}
 		}
 }
-function strunquote($str) //removes quotes used in superglobals
+function strunquote($str) //removes quotes used in superglobal names
 {
 	if (strlen($str)>2)
 	{
@@ -324,5 +332,4 @@ function strunquote($str) //removes quotes used in superglobals
 		return NULL;
 	}
 }
-
 ?>
