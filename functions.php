@@ -28,20 +28,24 @@ function tna(&$list,$main,$ctrlr) //track where the data from user taintable var
 	}
 }
 
-function sechk($data,$list,$main,$type,$te="direct",$k="0@0")
+function sechk($data,$type,$te,$k="0@0")
 {
 	include 'rules.php';
-	if ($type=='var')//for variable used in a query
+	global $main,$list;
+	if($type==='direct')
+	{
+		highlight($k,$te);
+	}
+	if ($type==='var')//for variable used in a query
 	{
 		//print_r($list);
 		foreach($list as $key=>$val)
 		{
 			if(array_key_exists(0,$val))
 			{
-				if($data===$val[0])
+				if($data===$val[0] or in_array($data,$taintable))
 				{
-					//echo "$te injection found $data<br>";
-					highlight($k,$main);
+					highlight($k,$te);
 				}
 				else 
 				{
@@ -51,7 +55,7 @@ function sechk($data,$list,$main,$type,$te="direct",$k="0@0")
 		}
 		if(in_array($data,$taintable))
 		{
-			//echo "SQL injection found direct superglobal use <br>";
+			highlight($k,$te);//echo "SQL injection found direct superglobal use <br>";
 		}
 		
 	}
@@ -63,7 +67,7 @@ function sechk($data,$list,$main,$type,$te="direct",$k="0@0")
 			{
 				if($chk['qvar']===$data)
 				{
-					sechk($data,$list,$main,'var');
+					sechk($data,$list,$main,'var','sql',$k);
 				}
 			}
 		}
@@ -71,54 +75,58 @@ function sechk($data,$list,$main,$type,$te="direct",$k="0@0")
 }
 function highlight()
 {
-	include_once 'geshi.php';
 	$data= func_get_args();
 	$str="";
-	
+	global $plines;
 	if(count($data)===2)
 	{
-		$key=func_get_arg(0);
-		
-		$main=func_get_arg(1);
+		$key=$data[0];
+		$type=$data[1];
+		global $main;
 		$line=$main[$key][2];
-		//echo "key $key ";
-		for($i=$key;$main[$i]!==';';$i++)
+		//echo "key $key "; 
+		if (!in_array($key,$plines))//check if the line is already printed or not
 		{
-			if(is_array($main[$i]))
+			for($i=$key;$main[$i]!==';';$i++)
 			{
-				$str.=$main[$i][1];
+				if(is_array($main[$i]))
+				{
+					$str.=$main[$i][1];
+				}
+				else 
+				{
+					$str.=$main[$i];
+				}
 			}
-			else 
-			{
-				$str.=$main[$i];
-			}
+			echo "
+				<code>$type <hr>$str; line : $line </code>";
+			array_push($plines,$key);
 		}
-		//$str.="";
-		$lang='php';
-		$geshi= new Geshi($str,$lang);
-		echo $geshi->parse_code()."$line";
-		echo "<br>";
+		else 
+		{
+			return ;
+		}
 	}
 	else 
 	{
-		highlight_string(func_get_arg(0));
-		echo "<br>";
+		return;
 	}
 }
 function explorer($main,$i,&$temp,$list,$mode="udf")// explore function and its operations  
 {
 	include 'exploitconfig.php';
+	include 'rules.php';
 		$end=count($main);
 		for($j=0;$j<$end;$j++)
 		{
 			if($main[$j][0]==='T_STRING')
 			{
 				$fname=$main[$j][1];
-				if(in_array($fname,$sqli))
+				if(in_array($fname,$sqli))//sql injection check
 				{
 					if ($main[$j+2][0]==='T_VARIABLE')//if the query is stored in a variable
 					{
-						echo sechk($main[$j+2][1],$list,$main,'string');
+						sechk($main[$j+2][1],'string','sql injection',$j);
 					}
 					else if ($main[$j+3][0]==='T_ENCAPSED_AND_WHITESPACE') //for queries with variables 
 					{
@@ -128,42 +136,82 @@ function explorer($main,$i,&$temp,$list,$mode="udf")// explore function and its 
 							{
 								if ($main[$i][0]==='T_VARIABLE')
 								{
-									sechk($main[$i][1],$list,$main,'var','sql',$j);
+									sechk($main[$i][1],'var','sql injection',$j);
 								}
 								
 							}
 						}
 					}
 				}
-				else if (in_array($fname,$cmdexec))
+				else if (in_array($fname,$cmdexec)) //command execution check 
 				{
-					echo "command execution functions found <br>";
-				}
-				else if (in_array($fname,$clbkfunc))
-				{
-					echo "callback functions found <br>";
+					if($fname==='shell_exec' or $fname==='`')
+					{
+						 $ty="shell command";
+					}
+					else 
+					{
+						$ty="external program";
+					}
+					if($main[$j+3][0]==='T_ENCAPSED_AND_WHITESPACE')
+					{
+						for($i=$j;$main[$i]!==';';$i++)
+						{
+							//print_r($main[$i]);
+							
+							if($main[$i][0]==='T_VARIABLE')
+							{
+								if(in_array($main[$i][1],$taintable))
+								{
+									sechk($main[$i][1],'direct',"$ty execution",$j);
+								}
+								else 
+								{
+									sechk($main[$i][1],'var',"$ty execution",$j);	
+								}
+							}
+						}
+						
+					}
+					else if($main[$j+3][0]==='T_VARIABLE')
+					{
+						
+					}
 				}
 				else 
 				{
 					
 				}
 			}
-			else if (in_array($main[$j][0],$xss))
+			else if (in_array($main[$j][0],$xss))//xss check 
 			{
 				for($i=$j;$main[$i]!==';';$i++)
 				{
-					if(is_array($main[$i]))
-					{
+					
 						if ($main[$i][0]==='T_VARIABLE')
 						{
-							sechk($main[$i][1],$list,'var','xss',$main[$i][2]."@".$i);
+							sechk($main[$i][1],'var','Cross site Scripting',$j);
 						}
-					}
 				}
 			}
 			else if(in_array($main[$j][0],$lrfi))
 			{
-				echo "lfi rfi function found <br>";
+				if($main[$j+2][0]==='T_ENCAPSED_AND_WHITESPACE')
+				{
+					for($i=$j;$main[$i]!==';';$i++)
+					{
+						if ($main[$i][0]==='T_VARIABLE')
+						{
+							sechk($main[$i][1],'var','Lfi',$j);
+						}
+					}
+				}
+				else if ($main[$j+2][0]==='T_VARIABLE')
+				{
+					sechk($main[$j+2][1],'var','Lfi',$j);
+				}
+				
+				
 			}
 		}
 	
